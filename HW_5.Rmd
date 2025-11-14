@@ -1,0 +1,41 @@
+---
+title: "HW5 ebw2145"
+output: html_document
+date: "2025-11-14"
+---
+Packages 
+```{r}
+library(ggplot2)
+```
+Problem 1
+```{r}
+all_bdays = seq(as.Date("2001-01-01"), as.Date("2001-12-31"), by = "day")
+names(all_bdays) = 1:365
+
+duplicate_bday = function(n) {
+  bday_nums = sample(1:365, n, replace = TRUE)   
+  bdays = all_bdays[as.character(bday_nums)]  
+  any(duplicated(bdays))}
+
+#randomly drawing bdays
+set.seed(1)
+group_sizes = 2:50
+nsim = 10000
+
+probabilities = sapply(group_sizes, function(n) {
+  mean(replicate(nsim, duplicate_bday(n)))})
+
+bday_df = data.frame(
+  group_size = group_sizes,
+  prob = probabilities)
+
+bday_prob_plot = ggplot(bday_df, aes(x = group_size, y = prob)) +
+  geom_line(linewidth = 1.2) +
+  labs(title = "Duplicate Bday Simulation Simulation",
+       x = "Group Size (n)",
+       y = "Probability of Shared Birthday") +
+  theme_minimal()
+
+bday_prob_plot
+```
+The chance of two people having the same birthday is quite low (nearly 0, at 0.0024) and increases as there are more people in the group - for example, we see that the probability of two people having the same birthday is almost guaranteed at 0.9720. 
