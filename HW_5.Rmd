@@ -100,4 +100,49 @@ mean_plot
 ```
 This simulation shows that the average of mu vs true mu across only significant tests is typically higher than the true mu for small or moderate effects due; as mu approaches the true mu the effect size and power increases. 
 
+Problem 3
 ```{r}
+homicides = read.csv("homicide-data.csv")
+glimpse(homicides)
+summary(homicides)
+
+city_summary = homicides %>%
+  mutate(city_state = str_c(city, state, sep = ", ")) %>%
+  group_by(city_state) %>%
+  summarize(total_homicides = n(),
+    unsolved_homicides = sum(disposition %in% c("Closed without arrest", "Open/No arrest")), .groups = "drop")
+
+baltimore_homicide = city_summary %>% 
+  filter(city_state == "Baltimore, MD")
+
+baltimore_prop_test = prop.test(x = baltimore_homicide$unsolved_homicides,
+  n = baltimore_homicide$total_homicides)
+
+# Tidy the output
+baltimore_tidy = tidy(baltimore_prop_test) %>%
+  select(estimate, conf.low, conf.high)
+
+baltimore_tidy
+
+all_city = city_summary %>%
+  mutate(prop_test = map2(unsolved_homicides, total_homicides, ~ prop.test(.x, .y)),
+    prop_tidy = map(prop_test, tidy)) %>%
+  unnest(prop_tidy) %>%
+  select(city_state, estimate, conf.low, conf.high)
+
+all_city = all_city %>%
+  arrange(desc(estimate)) %>%
+  mutate(city_state = factor(city_state, levels = city_state)) 
+
+all_city_plot = all_city %>%
+  ggplot(aes(x = city_state, y = estimate)) +
+  geom_point(color = "blue") +
+  geom_errorbar(aes(ymin = conf.low, ymax = conf.high), width = 0.3, color = "red") +
+  coord_flip() +
+  labs(title = "Proportion of Unsolved Homicides by City",
+    x = "City, State",
+    y = "Proportion Unsolved") +
+  theme_minimal()
+
+all_city_plot
+```
